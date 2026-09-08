@@ -1263,6 +1263,13 @@ function showGate(msg) {
 }
 
 function boot() {
+  // Someone already looking at the setup screen who then taps their invite
+  // link changes only the hash, which does not reload the page — so boot()
+  // would never re-run and nothing would appear to happen.
+  window.addEventListener('hashchange', function () {
+    if (Config.consumeHash()) location.reload();
+  });
+
   Config.consumeHash();
 
   if (!Config.ready()) { showGate(); return; }
