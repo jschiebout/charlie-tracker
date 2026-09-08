@@ -1,0 +1,46 @@
+name: Snoo sync
+
+# Pulls Snoo sleep sessions into the Charlie Tracker sheet.
+#
+# GitHub's scheduler is best-effort and can run late under load, which is fine
+# here — the job reconciles the last couple of days each time, so a missed run
+# is picked up by the next one rather than losing data.
+
+on:
+  schedule:
+    - cron: '17 * * * *'      # hourly, at :17 past (off-peak minutes run sooner)
+  workflow_dispatch:           # lets you run it by hand from the Actions tab
+
+concurrency:
+  group: snoo-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: snoo-sync/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r snoo-sync/requirements.txt
+
+      - name: Run sync
+        env:
+          SNOO_USERNAME:    ${{ secrets.SNOO_USERNAME }}
+          SNOO_PASSWORD:    ${{ secrets.SNOO_PASSWORD }}
+          TRACKER_URL:      ${{ secrets.TRACKER_URL }}
+          TRACKER_KEY:      ${{ secrets.TRACKER_KEY }}
+          NTFY_TOPIC:       ${{ secrets.NTFY_TOPIC }}
+          LOOKBACK_DAYS:    '2'
+          INCLUDE_SOOTHING: 'false'
+        run: python snoo-sync/snoo_sync.py
