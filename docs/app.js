@@ -511,12 +511,17 @@ function logEvent(event, detail, extra) {
   renderSync();
 
   if (!navigator.onLine) {
-    UI.toast('Saved — will send when back online', 'queued', undoLast);
+    UI.toast(Store.isDurable() ? 'Saved on this phone — waiting to sync' : 'Not synced — keep this app open', 'queued', undoLast);
     return;
   }
 
-  UI.toast('Logged: ' + describe(item), null, undoLast);
+  UI.toast('Saving: ' + describe(item), 'queued');
   Queue.flush().then(function (res) {
+    if (res && (res.accepted || []).indexOf(item.clientId) !== -1) {
+      UI.toast('Synced: ' + describe(item), null, undoLast);
+    } else if (Queue.has(item.clientId)) {
+      UI.toast('Not synced yet — keep the app open or tap Retry', 'queued');
+    }
     if (res && res.status) { state.status = res.status; renderStatus(); }
     renderSync();
     invalidateDerived();
@@ -525,6 +530,10 @@ function logEvent(event, detail, extra) {
 }
 
 function undoLast() {
+  if (Queue.busy()) {
+    UI.toast('Still syncing — remove the entry from History after it finishes', 'queued');
+    return;
+  }
   var item = state.lastSent;
   if (!item) return;
   state.lastSent = null;
