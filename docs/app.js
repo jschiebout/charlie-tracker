@@ -361,11 +361,11 @@ var TimeWheel = (function () {
       t = setTimeout(function () {
         var i = Math.round(col.node.scrollTop / ITEM);
         if (i !== col.index) {
+          stopTracking();
           col.index = Math.max(0, Math.min(col.values.length - 1, i));
           mark(col);
           buzz(6);
         }
-        stopTracking();
         onChange();
       }, 90);
     }, { passive: true });
