@@ -18,23 +18,23 @@
 <body>
 
 <!-- ================= first-run / setup needed ================= -->
-<div class="gate" id="gate" hidden>
+<div class="gate" id="gate" style="overflow-y:auto;align-items:flex-start" hidden>
   <div class="gateBox">
     <img class="gatePortrait" src="icons/charlie-portrait.png"
          alt="Charlie" width="128" height="128">
     <h1>Charlie Tracker</h1>
     <p id="gateMsg">
-      This app needs a setup link before it can be used. Ask Jessen or Laura to
-      text you your personal link, then open it on this phone.
+      Open your personal setup link in Safari, or paste it below. If your Home
+      Screen app asks again, paste the same link here to connect this app.
     </p>
-    <div class="gateManual" id="gateManual" hidden>
-      <label for="manualLink">Or paste your setup link here:</label>
+    <div class="gateManual" id="gateManual">
+      <label for="manualLink">Paste your personal setup link:</label>
       <input type="url" id="manualLink" placeholder="https://…" autocomplete="off"
              autocapitalize="off" spellcheck="false">
       <button class="primary" id="manualGo">Set up</button>
       <p class="gateErr" id="gateErr" hidden></p>
     </div>
-    <button class="linkish" id="showManual">I have a link</button>
+    <button class="linkish" id="showManual" hidden>I have a link</button>
   </div>
 </div>
 
