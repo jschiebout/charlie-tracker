@@ -6,7 +6,7 @@
    the in-app queue rather than here.
    ------------------------------------------------------------------------- */
 
-var VERSION = 'charlie-v6';
+var VERSION = 'charlie-v7';
 var SHELL = [
   './',
   'index.html',
