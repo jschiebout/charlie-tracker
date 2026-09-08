@@ -267,7 +267,11 @@ function describe(it) {
                   ? ' (' + it.detail.split('_')[1] + ')' : '') : 'Bottle';
     var extra = [];
     if (it.oz) extra.push(it.oz + ' oz');
-    if (it.minutes) extra.push(it.minutes + ' min');
+    if (it.nursing) {
+      if (it.nursing.status === 'active') extra.push('In progress');
+      if (it.nursing.leftMinutes) extra.push('Left ' + it.nursing.leftMinutes + ' min');
+      if (it.nursing.rightMinutes) extra.push('Right ' + it.nursing.rightMinutes + ' min');
+    } else if (it.minutes) extra.push(it.minutes + ' min');
     return label + (extra.length ? ' · ' + extra.join(', ') : '');
   }
   if (it.event === 'diaper') {
@@ -603,6 +607,9 @@ function renderStatus() {
     tile(s.today.sleepHrs + 'h', 'Sleep 24h') + '</div>';
 
   var lines = [];
+  if (s.nursingActive) {
+    lines.push('<b>Nursing in progress</b> since ' + esc(new Date(s.nursingActive.start).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})));
+  }
   if (s.lastFeed) {
     lines.push('Last feed: <b>' + esc(s.lastFeed.text) + '</b> (' +
                esc(s.lastFeed.at) + ', ' + esc(s.lastFeed.by) + ')');
@@ -790,6 +797,7 @@ function entrySheet(e) {
       esc(dayLabel(e.date)) + ' at ' + esc(e.time) + '<br>' +
       'Logged by ' + esc(e.caregiver) +
       (e.source && e.source !== 'phone' ? ' via ' + esc(e.source) : '') +
+      (e.nursing && e.nursing.end ? '<br>Ended ' + esc(new Date(e.nursing.end).toLocaleString()) : '') +
       (e.notes ? '<br>' + esc(e.notes) : '') +
     '</p>' +
     '<div class="chips">' +
