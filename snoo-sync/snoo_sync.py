@@ -46,6 +46,7 @@ the buttons -- nothing else in the system depends on this job.
 """
 
 import json
+import math
 import os
 import secrets
 import sys
@@ -335,8 +336,7 @@ def pubnub_history(session, serial, token, start_utc, end_utc):
                 collected.append((None, entry))
 
         if page == 0 and collected:
-            sample = json.dumps(collected[0][1])[:300]
-            log(f"  sample message: {sample}")
+            log("  received bassinet state data")
 
         if len(messages) < 100:
             break
@@ -347,50 +347,37 @@ def pubnub_history(session, serial, token, start_utc, end_utc):
 
 
 def blocks_from_messages(messages, tz):
-    """Reconstructs [(start, end, session_id)] from the state stream.
+    """Import completed bassinet sessions only; an active sighting is not a wake.
 
-    Each message carries the Snoo's state machine: a session id, whether the
-    session is still running, and how long it has been running. Taking the
-    earliest implied start and the latest sighting per session id gives the
-    stretch she was in the bassinet, without needing every intermediate
-    message to have survived retention.
+    These are bassinet activity intervals, not measured infant sleep. Require
+    an explicit inactive state and a valid elapsed duration before publishing.
     """
     sessions = {}
-
     for token, msg in messages:
         if token is None or not isinstance(msg, dict):
             continue
         state = msg.get("state_machine")
         if not isinstance(state, dict):
             continue
-        session_id = str(state.get("session_id") or "").strip()
-        if not session_id or session_id in ("0", "none", "None"):
+        sid = str(state.get("session_id") or "").strip()
+        if not sid or sid.lower() in ("0", "none"):
             continue
-
-        seen = from_timetoken(token, tz)
-        since_ms = state.get("since_session_start_ms") or 0
+        active = str(state.get("is_active_session", "")).lower()
+        if active not in ("true", "false"):
+            continue
         try:
-            started = seen - timedelta(milliseconds=float(since_ms))
-        except (TypeError, ValueError):
-            started = seen
-
-        span = sessions.get(session_id)
-        if span is None:
-            sessions[session_id] = [started, seen]
-        else:
-            span[0] = min(span[0], started)
-            span[1] = max(span[1], seen)
-
-    blocks = sorted(((start, end, sid) for sid, (start, end)
-                     in sessions.items()), key=lambda b: b[0])
-
-    merged = []
-    for start, end, sid in blocks:
-        if merged and (start - merged[-1][1]).total_seconds() <= 60:
-            merged[-1] = (merged[-1][0], max(end, merged[-1][1]), merged[-1][2])
-        else:
-            merged.append((start, end, sid))
-    return merged
+            elapsed = float(state["since_session_start_ms"])
+            if not math.isfinite(elapsed) or elapsed < 0:
+                continue
+            seen = from_timetoken(token, tz)
+            started = seen - timedelta(milliseconds=elapsed)
+        except (KeyError, ValueError, TypeError, OverflowError):
+            continue
+        prior = sessions.get(sid)
+        if prior is None or seen > prior[1]:
+            sessions[sid] = (started, seen, active)
+    return sorted((start, end, sid) for sid, (start, end, active)
+                  in sessions.items() if active == "false")
 
 
 def to_events(blocks, min_minutes):
@@ -400,13 +387,13 @@ def to_events(blocks, min_minutes):
         minutes = (end - start).total_seconds() / 60.0
         if minutes < min_minutes:
             continue
-        key = f"{session_id}:{start.isoformat()}"
+        key = f"snoo-session:{session_id}"
         events.append({
             "event": "sleep", "detail": "start",
             "at": start.isoformat(),
             "caregiver": "Snoo", "source": "snoo",
             "dedupe_key": key + ":s",
-            "notes": "",
+            "notes": "Snoo bassinet session; sleep not independently measured",
         })
         events.append({
             "event": "sleep", "detail": "end",
