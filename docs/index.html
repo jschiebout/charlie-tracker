@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>Charlie Tracker</title>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#12131a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Charlie">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- ================= first-run / setup needed ================= -->
+<div class="gate" id="gate" hidden>
+  <div class="gateBox">
+    <img class="gatePortrait" src="icons/charlie-portrait.png"
+         alt="Charlie" width="128" height="128">
+    <h1>Charlie Tracker</h1>
+    <p id="gateMsg">
+      This app needs a setup link before it can be used. Ask Jessen or Laura to
+      text you your personal link, then open it on this phone.
+    </p>
+    <div class="gateManual" id="gateManual" hidden>
+      <label for="manualLink">Or paste your setup link here:</label>
+      <input type="url" id="manualLink" placeholder="https://…" autocomplete="off"
+             autocapitalize="off" spellcheck="false">
+      <button class="primary" id="manualGo">Set up</button>
+      <p class="gateErr" id="gateErr" hidden></p>
+    </div>
+    <button class="linkish" id="showManual">I have a link</button>
+  </div>
+</div>
+
+<!-- ================= app ================= -->
+<div class="app" id="app" hidden>
+
+  <header class="bar">
+    <img class="avatar" id="avatar" src="icons/charlie-avatar.png" alt=""
+         width="38" height="38" decoding="async">
+    <div class="barTitle">
+      <h1 id="babyName">Charlie</h1>
+      <span class="age" id="ageText"></span>
+    </div>
+    <button class="whoChip" id="whoChip" aria-label="Change caregiver">
+      <span id="whoName">—</span>
+    </button>
+  </header>
+
+  <div class="sync" id="sync" hidden></div>
+
+  <!-- ---------------- LOG ---------------- -->
+  <main class="view" id="view-log">
+
+    <section class="status" id="status" aria-live="polite">
+      <div class="skel"></div>
+    </section>
+
+    <section class="timePick">
+      <div class="timeHead">
+        <span class="lbl">When did it happen?</span>
+        <button class="nowBtn" id="nowBtn">Now</button>
+      </div>
+
+      <div class="daySeg" id="daySeg" role="group" aria-label="Day">
+        <button data-day="0" class="on">Today</button>
+        <button data-day="1">Yesterday</button>
+      </div>
+
+      <div class="wheel" id="wheel">
+        <div class="wheelCol" id="colHour"   tabindex="0" role="listbox" aria-label="Hour"></div>
+        <div class="wheelSep">:</div>
+        <div class="wheelCol" id="colMin"    tabindex="0" role="listbox" aria-label="Minute"></div>
+        <div class="wheelCol narrow" id="colMer" tabindex="0" role="listbox" aria-label="AM or PM"></div>
+        <div class="wheelMask" aria-hidden="true"></div>
+      </div>
+
+      <p class="timeEcho" id="timeEcho"></p>
+    </section>
+
+    <h2 class="sec">Feeding</h2>
+    <div class="grid2">
+      <button class="log b-feed" data-open="bottle">
+        <span class="ico">🍼</span>Bottle<span class="sub">pick amount</span>
+      </button>
+      <button class="log b-feed" data-open="nursing">
+        <span class="ico">🤱</span>Nursing<span class="sub">side + minutes</span>
+      </button>
+    </div>
+
+    <h2 class="sec">Diaper</h2>
+    <div class="grid3">
+      <button class="log b-diaper" data-ev="diaper" data-dt="wet"><span class="ico">💧</span>Wet</button>
+      <button class="log b-diaper" data-ev="diaper" data-dt="dirty"><span class="ico">💩</span>Dirty</button>
+      <button class="log b-diaper" data-ev="diaper" data-dt="both"><span class="ico">🌊</span>Both</button>
+    </div>
+
+    <h2 class="sec">Sleep</h2>
+    <div class="grid2">
+      <button class="log b-sleep" data-ev="sleep" data-dt="start"><span class="ico">😴</span>Fell asleep</button>
+      <button class="log b-wake"  data-ev="sleep" data-dt="end"><span class="ico">☀️</span>Woke up</button>
+    </div>
+
+    <h2 class="sec">Other</h2>
+    <div class="grid2">
+      <button class="log quiet" data-open="pump"><span class="ico">🥛</span>Pump</button>
+      <button class="log quiet" data-open="note"><span class="ico">📝</span>Note</button>
+    </div>
+
+    <p class="foot">
+      Entries sync to everyone.<br>
+      No signal? Taps are saved and sent when you reconnect.
+    </p>
+  </main>
+
+  <!-- ---------------- HISTORY ---------------- -->
+  <main class="view" id="view-history" hidden>
+    <div class="filters" id="histFilters" role="group" aria-label="Filter history">
+      <button data-f="all" class="on">All</button>
+      <button data-f="feed">Feeds</button>
+      <button data-f="diaper">Diapers</button>
+      <button data-f="sleep">Sleep</button>
+      <button data-f="other">Other</button>
+    </div>
+    <div class="rangeRow">
+      <span class="lbl">Showing</span>
+      <div class="seg small" id="histRange">
+        <button data-d="2">2 days</button>
+        <button data-d="7" class="on">7 days</button>
+        <button data-d="30">30 days</button>
+      </div>
+    </div>
+    <div id="histList"><div class="skel tall"></div></div>
+  </main>
+
+  <!-- ---------------- CHARTS ---------------- -->
+  <main class="view" id="view-charts" hidden>
+    <div class="rangeRow">
+      <span class="lbl">Range</span>
+      <div class="seg small" id="chartRange">
+        <button data-d="7" class="on">7 days</button>
+        <button data-d="14">14 days</button>
+        <button data-d="30">30 days</button>
+      </div>
+    </div>
+    <div id="chartList"><div class="skel tall"></div></div>
+  </main>
+
+  <!-- ---------------- tabs ---------------- -->
+  <nav class="tabs" id="tabs" role="tablist">
+    <button data-view="log" class="on" role="tab" aria-selected="true">
+      <span class="tIco">➕</span>Log
+    </button>
+    <button data-view="history" role="tab" aria-selected="false">
+      <span class="tIco">📖</span>History
+    </button>
+    <button data-view="charts" role="tab" aria-selected="false">
+      <span class="tIco">📈</span>Charts
+    </button>
+  </nav>
+</div>
+
+<!-- ================= modal + toast ================= -->
+<div class="veil" id="veil" hidden><div class="sheet" id="sheetBox"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
